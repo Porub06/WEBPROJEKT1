@@ -33,7 +33,7 @@ const UserController = {
     // Új felhasználó hozzáadása
     async create(req, res) {
         const { email, password, name, phone, profileimage } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10); // Jelszó hash-elése
+        const hashedPassword = await bcrypt.hash(password, 10); // Jelszó hash-elése 60 charakter hosszúra
         try {
             const newUser = await userModel.create({ email, password: hashedPassword, name, phone, profileimage });
             res.status(201).json(newUser);
@@ -56,6 +56,7 @@ const UserController = {
                 res.status(404).json({ error: 'Nincs ilyen felhasználó' });
                 return;
             }
+            console.log('User found:', user); // Debugging log
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
                 res.status(401).json({ error: 'Hibás jelszó' });
@@ -69,14 +70,15 @@ const UserController = {
             res.cookie('refreshToken', refreshToken, {
                 httpOnly: true, // Csak a szerver férhet hozzá, nem a kliens oldali JavaScript
                 secure: false, // Csak HTTPS-en keresztül küldhető
-                sameSite: 'strict', // CSRF elleni védelem (Cross-Site Request Forgery)
+              //  sameSite: 'strict', // CSRF elleni védelem (Cross-Site Request Forgery)
+                sameSite: 'lax', // A cookie-t a böngésző minden kérésekor elküldi, de a harmadik fél oldalakról érkező kérések esetén nem
                 maxAge: 7 * 24 * 60 * 60 * 1000 // 7 nap
             });
 
             res.cookie('accessToken', accessToken, {
                 httpOnly: true,
                 secure: false,
-                sameSite: 'strict',
+                sameSite: 'lax',
                 maxAge: 10 * 60 * 1000 // 10 perc
             });
 
